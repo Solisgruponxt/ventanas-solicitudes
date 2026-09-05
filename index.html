@@ -119,6 +119,13 @@
   .pill.bad { color: var(--bad); }
   .empty, .loading { padding: 32px; text-align: center; color: var(--text-muted); }
   .table-scroll { overflow-x: auto; }
+  .historial-scroll { max-height: 460px; overflow-y: auto; }
+  .historial-scroll thead th {
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+    z-index: 1;
+  }
   .cal-header {
     display: flex;
     justify-content: space-between;
@@ -276,7 +283,7 @@
 
   <div class="section-title">Historial de solicitudes</div>
   <div class="card">
-    <div class="table-scroll">
+    <div class="table-scroll historial-scroll">
       <table id="tabla-historial">
         <thead>
           <tr>
