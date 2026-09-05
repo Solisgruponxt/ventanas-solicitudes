@@ -107,6 +107,64 @@
   .pill.bad { color: var(--bad); }
   .empty, .loading { padding: 32px; text-align: center; color: var(--text-muted); }
   .table-scroll { overflow-x: auto; }
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .cal-nav-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+  }
+  .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-month-label { font-weight: 600; font-size: 1rem; text-transform: capitalize; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--border);
+    min-width: 560px;
+  }
+  .cal-dow {
+    background: var(--card-bg);
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .cal-day {
+    background: var(--card-bg);
+    min-height: 84px;
+    padding: 6px;
+    font-size: 0.75rem;
+  }
+  .cal-day.other-month { opacity: 0.35; }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-day-num { font-weight: 600; margin-bottom: 4px; }
+  .cal-event {
+    display: block;
+    font-size: 0.66rem;
+    padding: 2px 5px;
+    border-radius: 5px;
+    margin-bottom: 2px;
+    background: var(--muted-pill-bg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cal-event.good { color: var(--good); }
+  .cal-event.warn { color: var(--warn); }
+  .cal-event.bad { color: var(--bad); }
 </style>
 </head>
 <body>
@@ -137,6 +195,18 @@
       </table>
     </div>
   </div>
+
+  <div class="section-title" style="margin-top: 32px;">Calendario</div>
+  <div class="card" style="padding: 16px;">
+    <div class="cal-header">
+      <button class="cal-nav-btn" id="cal-prev">← Mes anterior</button>
+      <div class="cal-month-label" id="cal-label"></div>
+      <button class="cal-nav-btn" id="cal-next">Mes siguiente →</button>
+    </div>
+    <div class="table-scroll">
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -150,31 +220,105 @@
     return `<span class="pill bad">✗ ${estatus}</span>`;
   }
 
+  let historialData = [];
+  const mesActual = new Date();
+  mesActual.setDate(1);
+  mesActual.setHours(0, 0, 0, 0);
+
+  const DOW = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+                 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  function estatusClass(estatus) {
+    if (!estatus) return '';
+    if (estatus.indexOf('todos') !== -1) return 'good';
+    if (estatus.indexOf('Parcial') !== -1) return 'warn';
+    return 'bad';
+  }
+
   async function cargarHistorial() {
     const tbody = document.getElementById('tbody-historial');
     try {
       const res = await fetch(WEB_APP_URL, { method: 'GET' });
       const datos = await res.json();
+      historialData = datos;
 
       if (!datos.length) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty">Aún no hay solicitudes registradas.</td></tr>';
-        return;
+      } else {
+        tbody.innerHTML = datos.map(row => `
+          <tr>
+            <td>${row.proyecto || ''}</td>
+            <td>${row.fecha || ''}</td>
+            <td>${row.hora || ''}</td>
+            <td>${row.duracion || ''} h</td>
+            <td>${row.solicitadaPor || ''}</td>
+            <td>${pillFor(row.estatus)}</td>
+          </tr>
+        `).join('');
       }
-
-      tbody.innerHTML = datos.map(row => `
-        <tr>
-          <td>${row.proyecto || ''}</td>
-          <td>${row.fecha || ''}</td>
-          <td>${row.hora || ''}</td>
-          <td>${row.duracion || ''} h</td>
-          <td>${row.solicitadaPor || ''}</td>
-          <td>${pillFor(row.estatus)}</td>
-        </tr>
-      `).join('');
     } catch (err) {
       tbody.innerHTML = '<tr><td colspan="6" class="empty">No se pudo cargar el historial.</td></tr>';
     }
+    renderCalendario();
   }
+
+  function renderCalendario() {
+    const grid = document.getElementById('cal-grid');
+    const label = document.getElementById('cal-label');
+    const year = mesActual.getFullYear();
+    const month = mesActual.getMonth();
+    label.textContent = `${MESES[month]} ${year}`;
+
+    const porFecha = {};
+    historialData.forEach(row => {
+      if (!row.fecha) return;
+      (porFecha[row.fecha] = porFecha[row.fecha] || []).push(row);
+    });
+
+    const diasEnMes = new Date(year, month + 1, 0).getDate();
+    const inicioOffset = new Date(year, month, 1).getDay();
+    const diasMesAnterior = new Date(year, month, 0).getDate();
+    const hoy = new Date();
+    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+
+    let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+    for (let i = inicioOffset - 1; i >= 0; i--) {
+      html += `<div class="cal-day other-month"><div class="cal-day-num">${diasMesAnterior - i}</div></div>`;
+    }
+
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+      const fechaStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+      const eventos = porFecha[fechaStr] || [];
+      const esHoy = fechaStr === hoyStr;
+
+      const eventosHtml = eventos.map(ev => {
+        const cls = estatusClass(ev.estatus);
+        const titulo = `${ev.proyecto || ''} · ${ev.hora || ''} · ${ev.solicitadaPor || ''}`.replace(/"/g, '&quot;');
+        return `<span class="cal-event ${cls}" title="${titulo}">${ev.hora || ''} ${ev.proyecto || ''}</span>`;
+      }).join('');
+
+      html += `<div class="cal-day${esHoy ? ' today' : ''}"><div class="cal-day-num">${dia}</div>${eventosHtml}</div>`;
+    }
+
+    const totalCeldas = inicioOffset + diasEnMes;
+    const sobrante = (7 - (totalCeldas % 7)) % 7;
+    for (let dia = 1; dia <= sobrante; dia++) {
+      html += `<div class="cal-day other-month"><div class="cal-day-num">${dia}</div></div>`;
+    }
+
+    grid.innerHTML = html;
+  }
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    mesActual.setMonth(mesActual.getMonth() - 1);
+    renderCalendario();
+  });
+  document.getElementById('cal-next').addEventListener('click', () => {
+    mesActual.setMonth(mesActual.getMonth() + 1);
+    renderCalendario();
+  });
 
   cargarHistorial();
   setInterval(cargarHistorial, 20000);

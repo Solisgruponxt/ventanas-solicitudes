@@ -89,6 +89,20 @@ function doPost(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function formatFecha(valor) {
+  if (valor instanceof Date) {
+    return Utilities.formatDate(valor, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(valor);
+}
+
+function formatHora(valor) {
+  if (valor instanceof Date) {
+    return Utilities.formatDate(valor, Session.getScriptTimeZone(), 'HH:mm');
+  }
+  return String(valor);
+}
+
 function doGet(e) {
   var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_TAB);
   var valores = sheet.getDataRange().getValues();
@@ -98,8 +112,11 @@ function doGet(e) {
     return {
       timestamp: fila[0] instanceof Date ? fila[0].toISOString() : String(fila[0]),
       proyecto: fila[1],
-      fecha: fila[2],
-      hora: fila[3],
+      // Sheets a veces auto-convierte estas celdas en objetos Date aunque se
+      // escribieron como texto ('YYYY-MM-DD' / 'HH:MM') — se normalizan aquí
+      // para que el calendario del frontend siempre reciba texto plano.
+      fecha: formatFecha(fila[2]),
+      hora: formatHora(fila[3]),
       duracion: fila[4],
       solicitadaPor: fila[5],
       estatus: fila[7]
