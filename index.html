@@ -13,6 +13,7 @@
     --border: #e5e7eb;
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
+    --accent-rgb: 37, 99, 235;
     --good: #16a34a;
     --warn: #d97706;
     --bad: #dc2626;
@@ -27,6 +28,7 @@
       --border: #2a2e37;
       --accent: #3b82f6;
       --accent-hover: #60a5fa;
+      --accent-rgb: 59, 130, 246;
       --good: #4ade80;
       --warn: #fbbf24;
       --bad: #f87171;
@@ -41,6 +43,7 @@
     --border: #2a2e37;
     --accent: #3b82f6;
     --accent-hover: #60a5fa;
+    --accent-rgb: 59, 130, 246;
     --good: #4ade80;
     --warn: #fbbf24;
     --bad: #f87171;
@@ -74,9 +77,18 @@
     padding: 14px 28px;
     border-radius: 10px;
     font-size: 1.05rem;
-    transition: background 0.15s;
+    box-shadow: 0 6px 18px -4px rgba(var(--accent-rgb), 0.55), 0 2px 4px rgba(var(--accent-rgb), 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: background 0.15s, transform 0.12s ease, box-shadow 0.12s ease;
   }
-  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 9px 22px -4px rgba(var(--accent-rgb), 0.6), 0 3px 6px rgba(var(--accent-rgb), 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .btn-primary:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px -2px rgba(var(--accent-rgb), 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
   .section-title {
     font-size: 1.1rem;
     font-weight: 600;
@@ -210,8 +222,21 @@
   .modal-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
   .btn { flex: 1; padding: 11px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; }
-  .btn-accent { background: var(--accent); color: #fff; }
-  .btn-accent:hover { background: var(--accent-hover); }
+  .btn-accent {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 6px 18px -4px rgba(var(--accent-rgb), 0.55), 0 2px 4px rgba(var(--accent-rgb), 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: background 0.15s, transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-accent:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 9px 22px -4px rgba(var(--accent-rgb), 0.6), 0 3px 6px rgba(var(--accent-rgb), 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .btn-accent:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px -2px rgba(var(--accent-rgb), 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
   .btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
   .btn-outline:hover { color: var(--text); border-color: var(--text-muted); }
   .btn-danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); }

@@ -13,6 +13,7 @@
     --border: #e5e7eb;
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
+    --accent-rgb: 37, 99, 235;
     --good: #16a34a;
     --warn: #d97706;
     --bad: #dc2626;
@@ -27,6 +28,7 @@
       --border: #2a2e37;
       --accent: #3b82f6;
       --accent-hover: #60a5fa;
+      --accent-rgb: 59, 130, 246;
       --good: #4ade80;
       --warn: #fbbf24;
       --bad: #f87171;
@@ -41,6 +43,7 @@
     --border: #2a2e37;
     --accent: #3b82f6;
     --accent-hover: #60a5fa;
+    --accent-rgb: 59, 130, 246;
     --good: #4ade80;
     --warn: #fbbf24;
     --bad: #f87171;
@@ -104,9 +107,19 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
+    box-shadow: 0 6px 18px -4px rgba(var(--accent-rgb), 0.55), 0 2px 4px rgba(var(--accent-rgb), 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: background 0.15s, transform 0.12s ease, box-shadow 0.12s ease;
   }
-  .btn-submit:hover { background: var(--accent-hover); }
-  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-submit:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 9px 22px -4px rgba(var(--accent-rgb), 0.6), 0 3px 6px rgba(var(--accent-rgb), 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .btn-submit:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px -2px rgba(var(--accent-rgb), 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
   .msg {
     margin-top: 18px;
     padding: 12px 14px;
