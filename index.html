@@ -126,6 +126,10 @@
     background: var(--card-bg);
     z-index: 1;
   }
+  .cal-card {
+    background: rgba(var(--accent-rgb), 0.07);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+  }
   .cal-header {
     display: flex;
     justify-content: space-between;
@@ -304,7 +308,7 @@
   </div>
 
   <div class="section-title" style="margin-top: 32px;">Calendario</div>
-  <div class="card" style="padding: 16px;">
+  <div class="card cal-card" style="padding: 16px;">
     <div class="cal-header">
       <button class="cal-nav-btn" id="cal-prev">← Mes anterior</button>
       <div class="cal-month-label" id="cal-label"></div>
