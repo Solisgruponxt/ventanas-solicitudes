@@ -15,9 +15,12 @@
     --accent-hover: #1d4ed8;
     --accent-rgb: 37, 99, 235;
     --good: #16a34a;
+    --good-rgb: 22, 163, 74;
     --warn: #d97706;
     --bad: #dc2626;
     --muted-pill-bg: #eef2f7;
+    --cal-tint-bg: #eaf1ff;
+    --historial-tint-bg: #eafbf1;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -30,9 +33,12 @@
       --accent-hover: #60a5fa;
       --accent-rgb: 59, 130, 246;
       --good: #4ade80;
+      --good-rgb: 74, 222, 128;
       --warn: #fbbf24;
       --bad: #f87171;
       --muted-pill-bg: #262b35;
+      --cal-tint-bg: #16233a;
+      --historial-tint-bg: #14261c;
     }
   }
   :root[data-theme="dark"] {
@@ -45,9 +51,12 @@
     --accent-hover: #60a5fa;
     --accent-rgb: 59, 130, 246;
     --good: #4ade80;
+    --good-rgb: 74, 222, 128;
     --warn: #fbbf24;
     --bad: #f87171;
     --muted-pill-bg: #262b35;
+    --cal-tint-bg: #16233a;
+    --historial-tint-bg: #14261c;
   }
   * { box-sizing: border-box; }
   body {
@@ -127,9 +136,14 @@
     z-index: 1;
   }
   .cal-card {
-    background: rgba(var(--accent-rgb), 0.07);
+    background: var(--cal-tint-bg);
     border: 1px solid rgba(var(--accent-rgb), 0.3);
   }
+  .historial-card {
+    background: var(--historial-tint-bg);
+    border: 1px solid rgba(var(--good-rgb), 0.3);
+  }
+  .historial-card .historial-scroll thead th { background: var(--historial-tint-bg); }
   .cal-header {
     display: flex;
     justify-content: space-between;
@@ -286,7 +300,7 @@
   </div>
 
   <div class="section-title">Historial de solicitudes</div>
-  <div class="card">
+  <div class="card historial-card">
     <div class="table-scroll historial-scroll">
       <table id="tabla-historial">
         <thead>
