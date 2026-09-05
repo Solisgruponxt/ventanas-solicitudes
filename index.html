@@ -177,6 +177,14 @@
   .cal-event.good { color: var(--good); }
   .cal-event.warn { color: var(--warn); }
   .cal-event.bad { color: var(--bad); }
+  .topbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+  .topbar img {
+    height: 90px;
+    width: auto;
+    background: #fff;
+    padding: 10px 18px;
+    border-radius: 12px;
+  }
   .cal-event { cursor: pointer; border: none; width: 100%; text-align: left; font-family: inherit; }
   .cal-event:hover { filter: brightness(0.92); }
   .modal-overlay {
@@ -249,6 +257,9 @@
 </head>
 <body>
 <div class="wrap">
+  <div class="topbar">
+    <img src="nxtview-logo.png" alt="nxtview">
+  </div>
   <div class="hero">
     <h1>Ventanas de Mantenimiento</h1>
     <p>Registra tu solicitud y se agenda automáticamente en los calendarios de Medición.</p>
