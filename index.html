@@ -165,6 +165,61 @@
   .cal-event.good { color: var(--good); }
   .cal-event.warn { color: var(--warn); }
   .cal-event.bad { color: var(--bad); }
+  .cal-event { cursor: pointer; border: none; width: 100%; text-align: left; font-family: inherit; }
+  .cal-event:hover { filter: brightness(0.92); }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-box h2 { margin: 0 0 18px; font-size: 1.15rem; }
+  .modal-box label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin: 14px 0 6px;
+  }
+  .modal-box label:first-of-type { margin-top: 0; }
+  .modal-box input, .modal-box textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+  .modal-box textarea { resize: vertical; min-height: 60px; }
+  .modal-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .btn { flex: 1; padding: 11px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent-hover); }
+  .btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-outline:hover { color: var(--text); border-color: var(--text-muted); }
+  .btn-danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); }
+  .btn-danger:hover { background: rgba(220,38,38,0.1); }
+  .modal-msg { margin-top: 14px; font-size: 0.85rem; padding: 10px 12px; border-radius: 8px; display: none; }
+  .modal-msg.show { display: block; }
+  .modal-msg.bad { background: rgba(220,38,38,0.12); color: var(--bad); }
+  .modal-msg.ok { background: rgba(22,163,74,0.12); color: var(--good); }
 </style>
 </head>
 <body>
@@ -207,6 +262,10 @@
       <div class="cal-grid" id="cal-grid"></div>
     </div>
   </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box" id="modal-box"></div>
 </div>
 
 <script>
@@ -296,7 +355,7 @@
       const eventosHtml = eventos.map(ev => {
         const cls = estatusClass(ev.estatus);
         const titulo = `${ev.proyecto || ''} · ${ev.hora || ''} · ${ev.solicitadaPor || ''}`.replace(/"/g, '&quot;');
-        return `<span class="cal-event ${cls}" title="${titulo}">${ev.hora || ''} ${ev.proyecto || ''}</span>`;
+        return `<button type="button" class="cal-event ${cls}" title="${titulo}" data-id="${ev.id}">${ev.hora || ''} ${ev.proyecto || ''}</button>`;
       }).join('');
 
       html += `<div class="cal-day${esHoy ? ' today' : ''}"><div class="cal-day-num">${dia}</div>${eventosHtml}</div>`;
@@ -319,6 +378,161 @@
     mesActual.setMonth(mesActual.getMonth() + 1);
     renderCalendario();
   });
+
+  // --- Edición protegida por login (una sola credencial, ver Code.gs) ---
+  let sesion = null; // {usuario, password} cacheado en memoria mientras dure la pestaña abierta
+
+  document.getElementById('cal-grid').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.cal-event');
+    if (!btn) return;
+    abrirModal(btn.dataset.id);
+  });
+
+  document.getElementById('modal-overlay').addEventListener('click', (ev) => {
+    if (ev.target.id === 'modal-overlay') cerrarModal();
+  });
+
+  function cerrarModal() {
+    document.getElementById('modal-overlay').classList.remove('show');
+  }
+
+  function escapeAttr(v) {
+    return String(v == null ? '' : v).replace(/"/g, '&quot;');
+  }
+  function escapeHtml(v) {
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  }
+
+  async function obtenerVentana(id, credenciales) {
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'obtener', id, ...credenciales })
+      });
+      const data = await res.json();
+      return data.ok ? data.datos : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function abrirModal(id) {
+    if (sesion) {
+      const datos = await obtenerVentana(id, sesion);
+      if (datos) {
+        renderFormEdicion(datos);
+        return;
+      }
+      sesion = null; // la credencial cacheada ya no sirvió, pedir de nuevo
+    }
+    renderFormLogin(id);
+  }
+
+  function renderFormLogin(id) {
+    const box = document.getElementById('modal-box');
+    box.innerHTML = `
+      <h2>Iniciar sesión para editar</h2>
+      <label for="mv-usuario">Usuario</label>
+      <input type="text" id="mv-usuario" autocomplete="username">
+      <label for="mv-password">Contraseña</label>
+      <input type="password" id="mv-password" autocomplete="current-password">
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="mv-cancelar">Cancelar</button>
+        <button type="button" class="btn btn-accent" id="mv-entrar">Entrar</button>
+      </div>
+      <div class="modal-msg" id="mv-msg"></div>
+    `;
+    document.getElementById('modal-overlay').classList.add('show');
+    document.getElementById('mv-cancelar').addEventListener('click', cerrarModal);
+    document.getElementById('mv-entrar').addEventListener('click', async () => {
+      const usuario = document.getElementById('mv-usuario').value.trim();
+      const password = document.getElementById('mv-password').value;
+      const intento = { usuario, password };
+      const datos = await obtenerVentana(id, intento);
+      if (datos) {
+        sesion = intento;
+        renderFormEdicion(datos);
+      } else {
+        const msg = document.getElementById('mv-msg');
+        msg.textContent = 'Usuario o contraseña incorrectos.';
+        msg.className = 'modal-msg show bad';
+      }
+    });
+  }
+
+  function renderFormEdicion(datos) {
+    const box = document.getElementById('modal-box');
+    box.innerHTML = `
+      <h2>Editar ventana</h2>
+      <label for="mv-proyecto">Proyecto</label>
+      <input type="text" id="mv-proyecto" value="${escapeAttr(datos.proyecto)}">
+      <div class="modal-row2">
+        <div>
+          <label for="mv-fecha">Fecha</label>
+          <input type="date" id="mv-fecha" value="${escapeAttr(datos.fecha)}">
+        </div>
+        <div>
+          <label for="mv-hora">Hora</label>
+          <input type="time" id="mv-hora" value="${escapeAttr(datos.hora)}">
+        </div>
+      </div>
+      <label for="mv-duracion">Duración (horas)</label>
+      <input type="number" step="0.5" min="0.5" id="mv-duracion" value="${escapeAttr(datos.duracion)}">
+      <label for="mv-solicitadaPor">Solicitada por</label>
+      <input type="text" id="mv-solicitadaPor" value="${escapeAttr(datos.solicitadaPor)}">
+      <label for="mv-acceso">Acceso para conectarse</label>
+      <textarea id="mv-acceso">${escapeHtml(datos.acceso || '')}</textarea>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="mv-eliminar">Eliminar ventana</button>
+        <button type="button" class="btn btn-accent" id="mv-guardar">Guardar cambios</button>
+      </div>
+      <div class="modal-msg" id="mv-msg"></div>
+    `;
+    document.getElementById('modal-overlay').classList.add('show');
+
+    document.getElementById('mv-guardar').addEventListener('click', async () => {
+      const payload = {
+        action: 'editar',
+        id: datos.id,
+        ...sesion,
+        proyecto: document.getElementById('mv-proyecto').value.trim(),
+        fecha: document.getElementById('mv-fecha').value,
+        hora: document.getElementById('mv-hora').value,
+        duracion: document.getElementById('mv-duracion').value,
+        solicitadaPor: document.getElementById('mv-solicitadaPor').value.trim(),
+        acceso: document.getElementById('mv-acceso').value.trim()
+      };
+      await enviarCambio(payload);
+    });
+
+    document.getElementById('mv-eliminar').addEventListener('click', async () => {
+      if (!confirm('¿Eliminar esta ventana de los 5 calendarios? Esta acción no se puede deshacer.')) return;
+      await enviarCambio({ action: 'eliminar', id: datos.id, ...sesion });
+    });
+  }
+
+  async function enviarCambio(payload) {
+    const msg = document.getElementById('mv-msg');
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.error) {
+        msg.textContent = 'Error: ' + data.error;
+        msg.className = 'modal-msg show bad';
+        return;
+      }
+      cerrarModal();
+      await cargarHistorial();
+    } catch (err) {
+      msg.textContent = 'No se pudo conectar con el servidor.';
+      msg.className = 'modal-msg show bad';
+    }
+  }
 
   cargarHistorial();
   setInterval(cargarHistorial, 20000);
