@@ -198,11 +198,13 @@
       if (data.error) {
         mostrarMensaje('Error: ' + data.error, 'bad');
       } else if (data.ok) {
-        mostrarMensaje('Ventana registrada y creada en todos los calendarios.', 'ok');
+        mostrarMensaje('Ventana registrada y creada en todos los calendarios. Regresando…', 'ok');
         form.reset();
+        setTimeout(() => { window.location.href = 'index.html'; }, 1500);
       } else {
-        mostrarMensaje('Registrada con incidencias: ' + data.estatus, 'warn');
+        mostrarMensaje('Registrada con incidencias: ' + data.estatus + '. Regresando…', 'warn');
         form.reset();
+        setTimeout(() => { window.location.href = 'index.html'; }, 1500);
       }
     } catch (err) {
       mostrarMensaje('No se pudo conectar con el servidor. Intenta de nuevo.', 'bad');
