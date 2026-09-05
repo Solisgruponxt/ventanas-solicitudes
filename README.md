@@ -6,7 +6,7 @@ Página pública para registrar solicitudes de ventana de mantenimiento; cada so
 
 1. Crear un Google Sheet nuevo desde `jsolis@gruponxt.com` llamado "Bitácora Ventanas Mantenimiento".
    - Renombrar la primera pestaña a `Solicitudes`.
-   - Fila 1 (encabezados, 10 columnas): `ID | Timestamp | Proyecto | Fecha | Hora | Duración (h) | Solicitada por | Acceso | Estatus | EventosJSON`.
+   - Fila 1 (encabezados, 11 columnas): `ID | Timestamp | Proyecto | Finalidad | Fecha | Hora | Duración (h) | Solicitada por | Acceso | Estatus | EventosJSON`.
    - Copiar el ID del Sheet (de la URL, entre `/d/` y `/edit`).
 2. En ese Sheet: **Extensiones → Apps Script**. Borrar el contenido default y pegar el de `Code.gs` de esta carpeta.
    - Reemplazar `SHEET_ID` con el ID copiado en el paso 1.
@@ -20,6 +20,10 @@ Página pública para registrar solicitudes de ventana de mantenimiento; cada so
 4. Pegar esa URL en la constante `WEB_APP_URL` de `index.html` y `formulario.html`.
 5. Pedir a las 5 personas destino que compartan su Google Calendar con `jsolis@gruponxt.com`, con permiso **"Hacer cambios en los eventos"** (Configuración de Calendar → "Compartir con determinadas personas").
 6. Hacer commit y push de los cambios en `index.html`/`formulario.html` para que GitHub Pages los publique.
+
+## Si ya tenías el Sheet con las 10 columnas anteriores (sin "Finalidad")
+
+Inserta una columna nueva entre "Proyecto" y "Fecha" (clic derecho en la columna de "Fecha" → "Insertar 1 columna a la izquierda") y nómbrala `Finalidad`. Sheets recorre automáticamente los datos existentes. Vuelve a pegar el `Code.gs` actualizado en Apps Script y redespliega (Nueva versión).
 
 ## Prueba
 

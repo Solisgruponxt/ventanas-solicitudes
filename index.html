@@ -262,6 +262,7 @@
         <thead>
           <tr>
             <th>Proyecto</th>
+            <th>Finalidad</th>
             <th>Fecha</th>
             <th>Hora</th>
             <th>Duración</th>
@@ -270,7 +271,7 @@
           </tr>
         </thead>
         <tbody id="tbody-historial">
-          <tr><td colspan="6" class="loading">Cargando historial…</td></tr>
+          <tr><td colspan="7" class="loading">Cargando historial…</td></tr>
         </tbody>
       </table>
     </div>
@@ -328,11 +329,12 @@
       historialData = datos;
 
       if (!datos.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty">Aún no hay solicitudes registradas.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">Aún no hay solicitudes registradas.</td></tr>';
       } else {
         tbody.innerHTML = datos.map(row => `
           <tr>
             <td>${row.proyecto || ''}</td>
+            <td>${row.finalidad || ''}</td>
             <td>${row.fecha || ''}</td>
             <td>${row.hora || ''}</td>
             <td>${row.duracion || ''} h</td>
@@ -342,7 +344,7 @@
         `).join('');
       }
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">No se pudo cargar el historial.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No se pudo cargar el historial.</td></tr>';
     }
     renderCalendario();
   }
@@ -379,7 +381,7 @@
 
       const eventosHtml = eventos.map(ev => {
         const cls = estatusClass(ev.estatus);
-        const titulo = `${ev.proyecto || ''} · ${ev.hora || ''} · ${ev.solicitadaPor || ''}`.replace(/"/g, '&quot;');
+        const titulo = `${ev.proyecto || ''} · ${ev.finalidad || ''} · ${ev.hora || ''} · ${ev.solicitadaPor || ''}`.replace(/"/g, '&quot;');
         return `<button type="button" class="cal-event ${cls}" title="${titulo}" data-id="${ev.id}">${ev.hora || ''} ${ev.proyecto || ''}</button>`;
       }).join('');
 
@@ -492,6 +494,8 @@
       <h2>Editar ventana</h2>
       <label for="mv-proyecto">Proyecto</label>
       <input type="text" id="mv-proyecto" value="${escapeAttr(datos.proyecto)}">
+      <label for="mv-finalidad">Finalidad de la ventana</label>
+      <input type="text" id="mv-finalidad" value="${escapeAttr(datos.finalidad)}">
       <div class="modal-row2">
         <div>
           <label for="mv-fecha">Fecha</label>
@@ -522,6 +526,7 @@
         id: datos.id,
         ...sesion,
         proyecto: document.getElementById('mv-proyecto').value.trim(),
+        finalidad: document.getElementById('mv-finalidad').value.trim(),
         fecha: document.getElementById('mv-fecha').value,
         hora: document.getElementById('mv-hora').value,
         duracion: document.getElementById('mv-duracion').value,

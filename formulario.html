@@ -143,6 +143,9 @@
       <label for="proyecto">Proyecto</label>
       <input type="text" id="proyecto" name="proyecto" required placeholder="Ej. Servidor Ingenio">
 
+      <label for="finalidad">Finalidad de la ventana</label>
+      <input type="text" id="finalidad" name="finalidad" required placeholder="Ej. Actualización de firmware">
+
       <div class="row2">
         <div>
           <label for="fecha">Fecha</label>
@@ -192,6 +195,7 @@
 
     const payload = {
       proyecto: document.getElementById('proyecto').value.trim(),
+      finalidad: document.getElementById('finalidad').value.trim(),
       fecha: document.getElementById('fecha').value,
       hora: document.getElementById('hora').value,
       duracion: document.getElementById('duracion').value,
