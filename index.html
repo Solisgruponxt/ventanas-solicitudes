@@ -177,7 +177,15 @@
   .cal-event.good { color: var(--good); }
   .cal-event.warn { color: var(--warn); }
   .cal-event.bad { color: var(--bad); }
-  .topbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .topbar-title { margin: 0; font-size: 1.6rem; }
   .topbar img {
     height: 90px;
     width: auto;
@@ -258,10 +266,10 @@
 <body>
 <div class="wrap">
   <div class="topbar">
+    <h1 class="topbar-title">Ventanas de Mantenimiento</h1>
     <img src="nxtview-logo.png" alt="nxtview">
   </div>
   <div class="hero">
-    <h1>Ventanas de Mantenimiento</h1>
     <p>Registra tu solicitud y se agenda automáticamente en los calendarios de Medición.</p>
     <a class="btn-primary" href="formulario.html">Registrar ventana de mantenimiento</a>
   </div>
