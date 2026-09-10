@@ -98,6 +98,26 @@
     transform: translateY(1px);
     box-shadow: 0 2px 8px -2px rgba(var(--accent-rgb), 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
   }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .btn-manual {
+    display: inline-block;
+    background: transparent;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 13px 27px;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    border: 1px solid var(--accent);
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-manual:hover {
+    background: rgba(var(--accent-rgb), 0.1);
+  }
   .section-title {
     font-size: 1.1rem;
     font-weight: 600;
@@ -297,7 +317,10 @@
   <div class="hero">
     <p>Registra tu solicitud y se agenda automáticamente en los calendarios de Medición.</p>
     <p><strong><u>Recuerda registrar tu ventana con 24 hrs de anticipación</u></strong></p>
-    <a class="btn-primary" href="formulario.html">Registrar ventana de mantenimiento</a>
+    <div class="hero-actions">
+      <a class="btn-primary" href="formulario.html">Registrar ventana de mantenimiento</a>
+      <a class="btn-manual" href="Manual-Registro-Ventanas-Mantenimiento.pdf" download>Manual de usuario</a>
+    </div>
   </div>
 
   <div class="section-title">Historial de solicitudes</div>
