@@ -189,6 +189,17 @@
 
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
+
+    const fechaVal = document.getElementById('fecha').value;
+    const horaVal = document.getElementById('hora').value;
+    const inicio = new Date(fechaVal + 'T' + horaVal + ':00');
+    const horasAnticipacion = (inicio.getTime() - Date.now()) / (1000 * 60 * 60);
+
+    if (isNaN(inicio.getTime()) || horasAnticipacion < 24) {
+      mostrarMensaje('La ventana debe registrarse con al menos 24 horas de anticipación.', 'bad');
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Registrando…';
     msg.className = 'msg';
@@ -196,8 +207,8 @@
     const payload = {
       proyecto: document.getElementById('proyecto').value.trim(),
       finalidad: document.getElementById('finalidad').value.trim(),
-      fecha: document.getElementById('fecha').value,
-      hora: document.getElementById('hora').value,
+      fecha: fechaVal,
+      hora: horaVal,
       duracion: document.getElementById('duracion').value,
       solicitadaPor: document.getElementById('solicitadaPor').value.trim(),
       acceso: document.getElementById('acceso').value.trim()
