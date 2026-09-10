@@ -345,7 +345,7 @@
 
   function pillFor(estatus) {
     if (!estatus) return '<span class="pill">—</span>';
-    if (estatus.indexOf('todos') !== -1) return `<span class="pill good">✓ ${estatus}</span>`;
+    if (estatus.indexOf('todos') !== -1 || estatus.indexOf('Registrada') !== -1) return `<span class="pill good">✓ ${estatus}</span>`;
     if (estatus.indexOf('Parcial') !== -1) return `<span class="pill warn">⚠ ${estatus}</span>`;
     return `<span class="pill bad">✗ ${estatus}</span>`;
   }
@@ -361,7 +361,7 @@
 
   function estatusClass(estatus) {
     if (!estatus) return '';
-    if (estatus.indexOf('todos') !== -1) return 'good';
+    if (estatus.indexOf('todos') !== -1 || estatus.indexOf('Registrada') !== -1) return 'good';
     if (estatus.indexOf('Parcial') !== -1) return 'warn';
     return 'bad';
   }
