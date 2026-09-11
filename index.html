@@ -368,11 +368,12 @@
             <th>Fecha</th>
             <th>Horario</th>
             <th>Solicitada por</th>
+            <th>Tipo de conexión</th>
             <th>Estatus</th>
           </tr>
         </thead>
         <tbody id="tbody-historial">
-          <tr><td colspan="7" class="loading">Cargando historial…</td></tr>
+          <tr><td colspan="8" class="loading">Cargando historial…</td></tr>
         </tbody>
       </table>
     </div>
@@ -432,7 +433,7 @@
       historialData = datos;
 
       if (!datos.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty">Aún no hay solicitudes registradas.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty">Aún no hay solicitudes registradas.</td></tr>';
       } else {
         tbody.innerHTML = datos.map(row => `
           <tr>
@@ -442,12 +443,13 @@
             <td>${row.fecha || ''}</td>
             <td>${row.hora || ''}${row.horaFin ? ' – ' + row.horaFin : ''}</td>
             <td>${row.solicitanteNombre || ''}</td>
+            <td>${row.tipoConexion || ''}</td>
             <td>${pillFor(row.estatus)}</td>
           </tr>
         `).join('');
       }
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">No se pudo cargar el historial.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">No se pudo cargar el historial.</td></tr>';
     }
     renderCalendario();
   }
