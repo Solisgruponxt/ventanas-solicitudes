@@ -285,37 +285,6 @@
   }
   .modal-box textarea { resize: vertical; min-height: 60px; }
   .modal-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .modal-box .box {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px 16px;
-    margin-top: 14px;
-    background: var(--bg);
-  }
-  .modal-box .box-titulo { font-size: 0.82rem; font-weight: 600; margin-bottom: 2px; }
-  .modal-box .acceso-preview {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .modal-box .acceso-preview img {
-    max-width: 120px;
-    max-height: 80px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-  }
-  .modal-box .acceso-preview-quitar {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    border-radius: 8px;
-    padding: 5px 9px;
-    font-size: 0.78rem;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .modal-box .acceso-preview-quitar:hover { color: var(--bad); border-color: var(--bad); }
   .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
   .btn { flex: 1; padding: 11px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; }
   .btn-accent {
@@ -398,15 +367,13 @@
   <div class="modal-box" id="modal-box"></div>
 </div>
 
-<script src="utc-offsets.js"></script>
-<script src="permisionarios.js"></script>
 <script>
   // TODO: pegar aquí la URL /exec del Web App de Apps Script una vez desplegado.
   const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx2tOrhMNiF9TQoTCd0J0rl-H46tjNhZUwo3ZpnJHPF_vNo4xpND1JID3QywqCTvq4Q/exec';
 
   function pillFor(estatus) {
     if (!estatus) return '<span class="pill">—</span>';
-    if (estatus.indexOf('todos') !== -1 || estatus.indexOf('Registrada') !== -1 || estatus.indexOf('Actualizada') !== -1) return `<span class="pill good">✓ ${estatus}</span>`;
+    if (estatus.indexOf('todos') !== -1 || estatus.indexOf('Registrada') !== -1 || estatus.indexOf('Actualizada') !== -1 || estatus.indexOf('Reprogramada') !== -1) return `<span class="pill good">✓ ${estatus}</span>`;
     if (estatus.indexOf('Parcial') !== -1) return `<span class="pill warn">⚠ ${estatus}</span>`;
     return `<span class="pill bad">✗ ${estatus}</span>`;
   }
@@ -422,7 +389,7 @@
 
   function estatusClass(estatus) {
     if (!estatus) return '';
-    if (estatus.indexOf('todos') !== -1 || estatus.indexOf('Registrada') !== -1 || estatus.indexOf('Actualizada') !== -1) return 'good';
+    if (estatus.indexOf('todos') !== -1 || estatus.indexOf('Registrada') !== -1 || estatus.indexOf('Actualizada') !== -1 || estatus.indexOf('Reprogramada') !== -1) return 'good';
     if (estatus.indexOf('Parcial') !== -1) return 'warn';
     return 'bad';
   }
@@ -513,9 +480,6 @@
     renderCalendario();
   });
 
-  // --- Edición protegida por login (una sola credencial, ver Code.gs) ---
-  let sesion = null; // {usuario, password} cacheado en memoria mientras dure la pestaña abierta
-
   document.getElementById('cal-grid').addEventListener('click', (ev) => {
     const btn = ev.target.closest('.cal-event');
     if (!btn) return;
@@ -537,28 +501,14 @@
     return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   }
 
-  async function obtenerVentana(id, credenciales) {
-    try {
-      const res = await fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'obtener', id, ...credenciales })
-      });
-      const data = await res.json();
-      return data.ok ? data.datos : null;
-    } catch (err) {
-      return null;
-    }
-  }
-
   function abrirModal(id) {
     const row = historialData.find(r => String(r.id) === String(id));
     if (!row) return;
     renderVistaVentana(row);
   }
 
-  // Vista rápida (sin login): permite cancelar la ventana con un clic, sin
-  // confirmación. Editar sigue pidiendo las credenciales de CREDENCIALES en Code.gs.
+  // Reporte de la ventana (datos ya públicos del historial, sin login) con
+  // dos acciones: Cancelar (pide quién cancela) o Reprogramar (solo fecha/hora).
   function renderVistaVentana(row) {
     const box = document.getElementById('modal-box');
     box.innerHTML = `
@@ -571,185 +521,74 @@
       <p><strong>Tipo de conexión:</strong> ${escapeHtml(row.tipoConexion || '—')}</p>
       <p><strong>Estatus:</strong> ${pillFor(row.estatus)}</p>
       <div class="modal-actions">
-        <button type="button" class="btn btn-danger" id="mv-cancelar-ventana">Cancelar ventana</button>
-        <button type="button" class="btn btn-accent" id="mv-editar">Editar</button>
+        <button type="button" class="btn btn-danger" id="mv-ir-cancelar">Cancelar</button>
+        <button type="button" class="btn btn-accent" id="mv-ir-reprogramar">Reprogramar</button>
       </div>
-      <div class="modal-msg" id="mv-msg"></div>
     `;
     document.getElementById('modal-overlay').classList.add('show');
 
-    document.getElementById('mv-cancelar-ventana').addEventListener('click', async () => {
-      await enviarCambio({ action: 'eliminar', id: row.id });
-    });
-    document.getElementById('mv-editar').addEventListener('click', async () => {
-      if (sesion) {
-        const datos = await obtenerVentana(row.id, sesion);
-        if (datos) { renderFormEdicion(datos); return; }
-        sesion = null;
-      }
-      renderFormLogin(row.id);
-    });
+    document.getElementById('mv-ir-cancelar').addEventListener('click', () => renderCancelarForm(row));
+    document.getElementById('mv-ir-reprogramar').addEventListener('click', () => renderReprogramarForm(row));
   }
 
-  function renderFormLogin(id) {
+  function renderCancelarForm(row) {
     const box = document.getElementById('modal-box');
     box.innerHTML = `
-      <h2>Iniciar sesión para editar</h2>
-      <label for="mv-usuario">Usuario</label>
-      <input type="text" id="mv-usuario" autocomplete="username">
-      <label for="mv-password">Contraseña</label>
-      <input type="password" id="mv-password" autocomplete="current-password">
+      <h2>Cancelar ventana</h2>
+      <p>${escapeHtml(row.permisionario || '')} · ${escapeHtml(row.fecha || '')} ${escapeHtml(row.hora || '')}${row.horaFin ? ' – ' + escapeHtml(row.horaFin) : ''}</p>
+      <label for="mv-canceladoPor">¿Quién realiza esta cancelación?</label>
+      <input type="text" id="mv-canceladoPor" placeholder="Tu nombre">
       <div class="modal-actions">
-        <button type="button" class="btn btn-outline" id="mv-cancelar">Cancelar</button>
-        <button type="button" class="btn btn-accent" id="mv-entrar">Entrar</button>
+        <button type="button" class="btn btn-outline" id="mv-volver">Volver</button>
+        <button type="button" class="btn btn-danger" id="mv-confirmar-cancelar">Confirmar cancelación</button>
       </div>
       <div class="modal-msg" id="mv-msg"></div>
     `;
-    document.getElementById('modal-overlay').classList.add('show');
-    document.getElementById('mv-cancelar').addEventListener('click', cerrarModal);
-    document.getElementById('mv-entrar').addEventListener('click', async () => {
-      const usuario = document.getElementById('mv-usuario').value.trim();
-      const password = document.getElementById('mv-password').value;
-      const intento = { usuario, password };
-      const datos = await obtenerVentana(id, intento);
-      if (datos) {
-        sesion = intento;
-        renderFormEdicion(datos);
-      } else {
-        const msg = document.getElementById('mv-msg');
-        msg.textContent = 'Usuario o contraseña incorrectos.';
+    document.getElementById('mv-volver').addEventListener('click', () => renderVistaVentana(row));
+    document.getElementById('mv-confirmar-cancelar').addEventListener('click', async () => {
+      const canceladoPor = document.getElementById('mv-canceladoPor').value.trim();
+      const msg = document.getElementById('mv-msg');
+      if (!canceladoPor) {
+        msg.textContent = 'Debes indicar quién realiza la cancelación.';
         msg.className = 'modal-msg show bad';
+        return;
       }
+      await enviarCambio({ action: 'eliminar', id: row.id, canceladoPor });
     });
   }
 
-  function renderFormEdicion(datos) {
+  function renderReprogramarForm(row) {
     const box = document.getElementById('modal-box');
-    const tiposConexion = ['TeamViewer', 'AnyDesk', 'Meet', 'Remote Desktop', 'Otro'];
-    const matchDrive = /^https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//.exec(datos.acceso || '');
-    const esImagenExistente = !!matchDrive;
-    const previewSrcExistente = matchDrive ? `https://drive.google.com/thumbnail?id=${matchDrive[1]}&sz=w400` : '';
-
     box.innerHTML = `
-      <h2>Editar ventana</h2>
-      <label for="mv-permisionario">Permisionario</label>
-      <select id="mv-permisionario"></select>
-      <label for="mv-cliente">Cliente</label>
-      <input type="text" id="mv-cliente" value="${escapeAttr(datos.cliente)}">
-      <label for="mv-finalidad">Finalidad de la ventana</label>
-      <input type="text" id="mv-finalidad" value="${escapeAttr(datos.finalidad)}">
+      <h2>Reprogramar ventana</h2>
+      <p>${escapeHtml(row.permisionario || '')}${row.cliente ? ' · ' + escapeHtml(row.cliente) : ''}</p>
       <label for="mv-fecha">Fecha</label>
-      <input type="date" id="mv-fecha" value="${escapeAttr(datos.fecha)}">
+      <input type="date" id="mv-fecha" value="${escapeAttr(row.fecha)}">
       <div class="modal-row2">
         <div>
           <label for="mv-hora">Hora de inicio</label>
-          <input type="time" id="mv-hora" value="${escapeAttr(datos.hora)}">
+          <input type="time" id="mv-hora" value="${escapeAttr(row.hora)}">
         </div>
         <div>
           <label for="mv-horaFin">Hora de término</label>
-          <input type="time" id="mv-horaFin" value="${escapeAttr(datos.horaFin)}">
+          <input type="time" id="mv-horaFin" value="${escapeAttr(row.horaFin)}">
         </div>
       </div>
-      <label for="mv-utc">Zona horaria (UTC)</label>
-      <select id="mv-utc"></select>
-      <div class="box">
-        <div class="box-titulo">Solicitada por</div>
-        <label for="mv-solicitanteNombre">Nombre</label>
-        <input type="text" id="mv-solicitanteNombre" value="${escapeAttr(datos.solicitanteNombre)}">
-        <label for="mv-solicitanteCorreo">Correo</label>
-        <input type="email" id="mv-solicitanteCorreo" value="${escapeAttr(datos.solicitanteCorreo)}">
-        <label for="mv-solicitanteTelefono">Teléfono</label>
-        <input type="tel" id="mv-solicitanteTelefono" value="${escapeAttr(datos.solicitanteTelefono)}">
-      </div>
-      <label for="mv-tipoConexion">Tipo de conexión</label>
-      <select id="mv-tipoConexion">
-        ${tiposConexion.map(t => `<option value="${t}"${t === datos.tipoConexion ? ' selected' : ''}>${t}</option>`).join('')}
-      </select>
-      <label for="mv-acceso">Liga, acceso o imagen</label>
-      <textarea id="mv-acceso" placeholder="Escribe la liga/acceso, o pega una imagen aquí (Ctrl+V)"${esImagenExistente ? ' disabled' : ''}>${esImagenExistente ? '' : escapeHtml(datos.acceso || '')}</textarea>
-      <div class="acceso-preview" id="mv-acceso-preview"${esImagenExistente ? '' : ' hidden'}>
-        <img id="mv-acceso-preview-img" src="${escapeAttr(previewSrcExistente)}" alt="Vista previa del acceso">
-        <button type="button" class="acceso-preview-quitar" id="mv-acceso-preview-quitar">Quitar imagen</button>
-      </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-danger" id="mv-eliminar">Eliminar ventana</button>
-        <button type="button" class="btn btn-accent" id="mv-guardar">Guardar cambios</button>
+        <button type="button" class="btn btn-outline" id="mv-volver">Volver</button>
+        <button type="button" class="btn btn-accent" id="mv-confirmar-reprogramar">Guardar nuevo horario</button>
       </div>
       <div class="modal-msg" id="mv-msg"></div>
     `;
-    document.getElementById('modal-overlay').classList.add('show');
-    poblarSelectUTC(document.getElementById('mv-utc'), datos.utc || '-06:00');
-    poblarSelectPermisionario(document.getElementById('mv-permisionario'), datos.permisionario);
-
-    // --- Acceso: texto libre o imagen pegada (Ctrl+V), igual que en formulario.html ---
-    let mvImagenBase64 = esImagenExistente ? 'existente' : null; // 'existente' = conservar el link ya guardado, sin volver a subir
-    let mvImagenMime = null;
-
-    const mvAcceso = document.getElementById('mv-acceso');
-    const mvPreview = document.getElementById('mv-acceso-preview');
-    const mvPreviewImg = document.getElementById('mv-acceso-preview-img');
-
-    function mvQuitarImagen() {
-      mvImagenBase64 = null;
-      mvImagenMime = null;
-      mvPreview.hidden = true;
-      mvPreviewImg.src = '';
-      mvAcceso.disabled = false;
-      mvAcceso.placeholder = 'Escribe la liga/acceso, o pega una imagen aquí (Ctrl+V)';
-    }
-
-    mvAcceso.addEventListener('paste', (ev) => {
-      const items = ev.clipboardData && ev.clipboardData.items;
-      if (!items) return;
-      for (const item of items) {
-        if (item.type.indexOf('image/') === 0) {
-          ev.preventDefault();
-          const file = item.getAsFile();
-          const reader = new FileReader();
-          reader.onload = () => {
-            const dataUrl = reader.result;
-            mvImagenBase64 = dataUrl.split(',')[1];
-            mvImagenMime = file.type;
-            mvPreviewImg.src = dataUrl;
-            mvPreview.hidden = false;
-            mvAcceso.value = '';
-            mvAcceso.disabled = true;
-            mvAcceso.placeholder = 'Imagen adjunta (ver vista previa abajo)';
-          };
-          reader.readAsDataURL(file);
-          return;
-        }
-      }
-    });
-
-    document.getElementById('mv-acceso-preview-quitar').addEventListener('click', mvQuitarImagen);
-
-    document.getElementById('mv-guardar').addEventListener('click', async () => {
-      const payload = {
-        action: 'editar',
-        id: datos.id,
-        ...sesion,
-        permisionario: document.getElementById('mv-permisionario').value.trim(),
-        cliente: document.getElementById('mv-cliente').value.trim(),
-        finalidad: document.getElementById('mv-finalidad').value.trim(),
+    document.getElementById('mv-volver').addEventListener('click', () => renderVistaVentana(row));
+    document.getElementById('mv-confirmar-reprogramar').addEventListener('click', async () => {
+      await enviarCambio({
+        action: 'reprogramar',
+        id: row.id,
         fecha: document.getElementById('mv-fecha').value,
         hora: document.getElementById('mv-hora').value,
-        horaFin: document.getElementById('mv-horaFin').value,
-        utc: document.getElementById('mv-utc').value,
-        solicitanteNombre: document.getElementById('mv-solicitanteNombre').value.trim(),
-        solicitanteCorreo: document.getElementById('mv-solicitanteCorreo').value.trim(),
-        solicitanteTelefono: document.getElementById('mv-solicitanteTelefono').value.trim(),
-        tipoConexion: document.getElementById('mv-tipoConexion').value,
-        // 'existente' = no se tocó el acceso guardado: se reenvía el mismo link para conservarlo.
-        acceso: mvImagenBase64 === 'existente' ? datos.acceso : (mvImagenBase64 ? '' : mvAcceso.value.trim()),
-        accesoImagenBase64: (mvImagenBase64 && mvImagenBase64 !== 'existente') ? mvImagenBase64 : undefined,
-        accesoImagenMime: mvImagenMime || undefined
-      };
-      await enviarCambio(payload);
-    });
-
-    document.getElementById('mv-eliminar').addEventListener('click', async () => {
-      await enviarCambio({ action: 'eliminar', id: datos.id });
+        horaFin: document.getElementById('mv-horaFin').value
+      });
     });
   }
 
