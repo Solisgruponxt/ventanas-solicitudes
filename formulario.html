@@ -18,6 +18,7 @@
     --warn: #d97706;
     --bad: #dc2626;
     --input-bg: #ffffff;
+    --box-bg: #f7f8fa;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -33,6 +34,7 @@
       --warn: #fbbf24;
       --bad: #f87171;
       --input-bg: #12141a;
+      --box-bg: #12141a;
     }
   }
   :root[data-theme="dark"] {
@@ -48,6 +50,7 @@
     --warn: #fbbf24;
     --bad: #f87171;
     --input-bg: #12141a;
+    --box-bg: #12141a;
   }
   * { box-sizing: border-box; }
   body {
@@ -80,7 +83,7 @@
     margin-top: 18px;
   }
   label:first-of-type { margin-top: 0; }
-  input, textarea {
+  input, textarea, select {
     width: 100%;
     padding: 10px 12px;
     border-radius: 8px;
@@ -90,12 +93,43 @@
     font-size: 0.95rem;
     font-family: inherit;
   }
-  input:focus, textarea:focus {
+  input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: var(--accent);
   }
   textarea { resize: vertical; min-height: 70px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px 18px;
+    margin-top: 18px;
+    background: var(--box-bg);
+  }
+  .box-titulo { font-size: 0.85rem; font-weight: 600; margin-bottom: 2px; }
+  .acceso-preview {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .acceso-preview img {
+    max-width: 140px;
+    max-height: 90px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .acceso-preview-quitar {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .acceso-preview-quitar:hover { color: var(--bad); border-color: var(--bad); }
   .btn-submit {
     width: 100%;
     margin-top: 28px;
@@ -140,8 +174,11 @@
   <div class="card">
     <h1>Registrar ventana de mantenimiento</h1>
     <form id="form-ventana">
-      <label for="proyecto">Proyecto</label>
-      <input type="text" id="proyecto" name="proyecto" required placeholder="Ej. Servidor Ingenio">
+      <label for="permisionario">Permisionario</label>
+      <input type="text" id="permisionario" name="permisionario" required placeholder="Ej. Servidor Ingenio">
+
+      <label for="cliente">Cliente</label>
+      <input type="text" id="cliente" name="cliente" required placeholder="Nombre del cliente">
 
       <label for="finalidad">Finalidad de la ventana</label>
       <input type="text" id="finalidad" name="finalidad" required placeholder="Ej. Actualización de firmware">
@@ -157,15 +194,39 @@
         </div>
       </div>
 
+      <label for="utc">Zona horaria (UTC)</label>
+      <select id="utc" name="utc" required></select>
+
       <label for="duracion">Tiempo de la ventana (horas)</label>
       <input type="number" id="duracion" name="duracion" step="0.5" min="0.5" required placeholder="Ej. 2">
 
-      <label for="solicitadaPor">Solicitada por</label>
-      <input type="text" id="solicitadaPor" name="solicitadaPor" required placeholder="Nombre de quien solicita">
+      <div class="box">
+        <div class="box-titulo">Solicitada por</div>
+        <label for="solicitanteNombre">Nombre</label>
+        <input type="text" id="solicitanteNombre" name="solicitanteNombre" required placeholder="Nombre de quien solicita">
+        <label for="solicitanteCorreo">Correo</label>
+        <input type="email" id="solicitanteCorreo" name="solicitanteCorreo" required placeholder="correo@dominio.com">
+        <label for="solicitanteTelefono">Teléfono</label>
+        <input type="tel" id="solicitanteTelefono" name="solicitanteTelefono" placeholder="Ej. 55 1234 5678">
+      </div>
 
-      <label for="acceso">Enlace de acceso</label>
-      <textarea id="acceso" name="acceso" placeholder="Proporciona el enlace (liga de reunión, VPN, TeamViewer, etc.)"></textarea>
-      <div class="hint">Esta información solo la verán las personas del calendario, no aparece en el historial público.</div>
+      <label for="tipoConexion">Tipo de conexión</label>
+      <select id="tipoConexion" name="tipoConexion" required>
+        <option value="" disabled selected>Selecciona una opción</option>
+        <option value="TeamViewer">TeamViewer</option>
+        <option value="AnyDesk">AnyDesk</option>
+        <option value="Meet">Meet</option>
+        <option value="Remote Desktop">Remote Desktop</option>
+        <option value="Otro">Otro</option>
+      </select>
+
+      <label for="acceso">Liga, acceso o imagen</label>
+      <textarea id="acceso" name="acceso" placeholder="Escribe la liga/acceso, o pega una imagen aquí (Ctrl+V)"></textarea>
+      <div class="acceso-preview" id="acceso-preview" hidden>
+        <img id="acceso-preview-img" alt="Vista previa del acceso">
+        <button type="button" class="acceso-preview-quitar" id="acceso-preview-quitar">Quitar imagen</button>
+      </div>
+      <div class="hint">Esta información solo la verán las personas del calendario, no aparece en el historial público. Puedes escribir texto o pegar (Ctrl+V) una imagen.</div>
 
       <button type="submit" class="btn-submit" id="btn-submit">Registrar</button>
 
@@ -174,9 +235,12 @@
   </div>
 </div>
 
+<script src="utc-offsets.js"></script>
 <script>
   // TODO: pegar aquí la URL /exec del Web App de Apps Script una vez desplegado.
   const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx2tOrhMNiF9TQoTCd0J0rl-H46tjNhZUwo3ZpnJHPF_vNo4xpND1JID3QywqCTvq4Q/exec';
+
+  poblarSelectUTC(document.getElementById('utc'), '-06:00');
 
   const form = document.getElementById('form-ventana');
   const btn = document.getElementById('btn-submit');
@@ -187,12 +251,57 @@
     msg.className = 'msg show ' + tipo;
   }
 
+  // --- Acceso: texto libre o imagen pegada (Ctrl+V) ---
+  let accesoImagenBase64 = null;
+  let accesoImagenMime = null;
+
+  const accesoTextarea = document.getElementById('acceso');
+  const accesoPlaceholderOriginal = accesoTextarea.placeholder;
+  const accesoPreview = document.getElementById('acceso-preview');
+  const accesoPreviewImg = document.getElementById('acceso-preview-img');
+
+  function quitarImagenAcceso() {
+    accesoImagenBase64 = null;
+    accesoImagenMime = null;
+    accesoPreview.hidden = true;
+    accesoPreviewImg.src = '';
+    accesoTextarea.disabled = false;
+    accesoTextarea.placeholder = accesoPlaceholderOriginal;
+  }
+
+  accesoTextarea.addEventListener('paste', (ev) => {
+    const items = ev.clipboardData && ev.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.indexOf('image/') === 0) {
+        ev.preventDefault();
+        const file = item.getAsFile();
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result;
+          accesoImagenBase64 = dataUrl.split(',')[1];
+          accesoImagenMime = file.type;
+          accesoPreviewImg.src = dataUrl;
+          accesoPreview.hidden = false;
+          accesoTextarea.value = '';
+          accesoTextarea.disabled = true;
+          accesoTextarea.placeholder = 'Imagen adjunta (ver vista previa abajo)';
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  });
+
+  document.getElementById('acceso-preview-quitar').addEventListener('click', quitarImagenAcceso);
+
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
 
     const fechaVal = document.getElementById('fecha').value;
     const horaVal = document.getElementById('hora').value;
-    const inicio = new Date(fechaVal + 'T' + horaVal + ':00');
+    const utcVal = document.getElementById('utc').value;
+    const inicio = new Date(fechaVal + 'T' + horaVal + ':00' + utcVal);
     const horasAnticipacion = (inicio.getTime() - Date.now()) / (1000 * 60 * 60);
 
     if (isNaN(inicio.getTime()) || horasAnticipacion < 24) {
@@ -205,13 +314,20 @@
     msg.className = 'msg';
 
     const payload = {
-      proyecto: document.getElementById('proyecto').value.trim(),
+      permisionario: document.getElementById('permisionario').value.trim(),
+      cliente: document.getElementById('cliente').value.trim(),
       finalidad: document.getElementById('finalidad').value.trim(),
       fecha: fechaVal,
       hora: horaVal,
+      utc: utcVal,
       duracion: document.getElementById('duracion').value,
-      solicitadaPor: document.getElementById('solicitadaPor').value.trim(),
-      acceso: document.getElementById('acceso').value.trim()
+      solicitanteNombre: document.getElementById('solicitanteNombre').value.trim(),
+      solicitanteCorreo: document.getElementById('solicitanteCorreo').value.trim(),
+      solicitanteTelefono: document.getElementById('solicitanteTelefono').value.trim(),
+      tipoConexion: document.getElementById('tipoConexion').value,
+      acceso: accesoImagenBase64 ? '' : accesoTextarea.value.trim(),
+      accesoImagenBase64: accesoImagenBase64 || undefined,
+      accesoImagenMime: accesoImagenMime || undefined
     };
 
     try {
@@ -228,10 +344,12 @@
       } else if (data.ok) {
         mostrarMensaje('Ventana registrada y creada en todos los calendarios. Regresando…', 'ok');
         form.reset();
+        quitarImagenAcceso();
         setTimeout(() => { window.location.href = 'https://solisgruponxt.github.io/ventanas-solicitudes/index.html'; }, 1500);
       } else {
         mostrarMensaje('Registrada con incidencias: ' + data.estatus + '. Regresando…', 'warn');
         form.reset();
+        quitarImagenAcceso();
         setTimeout(() => { window.location.href = 'https://solisgruponxt.github.io/ventanas-solicitudes/index.html'; }, 1500);
       }
     } catch (err) {
