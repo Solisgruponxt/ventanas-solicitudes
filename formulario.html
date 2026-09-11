@@ -302,7 +302,19 @@
 
     const fechaVal = document.getElementById('fecha').value;
     const horaVal = document.getElementById('hora').value;
+    const horaFinVal = document.getElementById('horaFin').value;
     const utcVal = document.getElementById('utc').value;
+
+    const hoyStr = new Date().toISOString().slice(0, 10);
+    if (!fechaVal || fechaVal < hoyStr) {
+      mostrarMensaje('La fecha no puede ser anterior a hoy.', 'bad');
+      return;
+    }
+    if (!horaVal || !horaFinVal || horaFinVal <= horaVal) {
+      mostrarMensaje('La hora de término no puede ser menor o igual a la hora de inicio.', 'bad');
+      return;
+    }
+
     const inicio = new Date(fechaVal + 'T' + horaVal + ':00' + utcVal);
     const horasAnticipacion = (inicio.getTime() - Date.now()) / (1000 * 60 * 60);
 

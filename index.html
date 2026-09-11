@@ -582,13 +582,24 @@
     `;
     document.getElementById('mv-volver').addEventListener('click', () => renderVistaVentana(row));
     document.getElementById('mv-confirmar-reprogramar').addEventListener('click', async () => {
-      await enviarCambio({
-        action: 'reprogramar',
-        id: row.id,
-        fecha: document.getElementById('mv-fecha').value,
-        hora: document.getElementById('mv-hora').value,
-        horaFin: document.getElementById('mv-horaFin').value
-      });
+      const fecha = document.getElementById('mv-fecha').value;
+      const hora = document.getElementById('mv-hora').value;
+      const horaFin = document.getElementById('mv-horaFin').value;
+      const msg = document.getElementById('mv-msg');
+
+      const hoyStr = new Date().toISOString().slice(0, 10);
+      if (!fecha || fecha < hoyStr) {
+        msg.textContent = 'La fecha no puede ser anterior a hoy.';
+        msg.className = 'modal-msg show bad';
+        return;
+      }
+      if (!hora || !horaFin || horaFin <= hora) {
+        msg.textContent = 'La hora de término no puede ser menor o igual a la hora de inicio.';
+        msg.className = 'modal-msg show bad';
+        return;
+      }
+
+      await enviarCambio({ action: 'reprogramar', id: row.id, fecha, hora, horaFin });
     });
   }
 
