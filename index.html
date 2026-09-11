@@ -264,6 +264,8 @@
     overflow-y: auto;
   }
   .modal-box h2 { margin: 0 0 18px; font-size: 1.15rem; }
+  .modal-box p { margin: 0 0 10px; font-size: 0.9rem; line-height: 1.5; }
+  .modal-box p strong { color: var(--text-muted); font-weight: 600; }
   .modal-box label {
     display: block;
     font-size: 0.82rem;
@@ -549,16 +551,44 @@
     }
   }
 
-  async function abrirModal(id) {
-    if (sesion) {
-      const datos = await obtenerVentana(id, sesion);
-      if (datos) {
-        renderFormEdicion(datos);
-        return;
+  function abrirModal(id) {
+    const row = historialData.find(r => String(r.id) === String(id));
+    if (!row) return;
+    renderVistaVentana(row);
+  }
+
+  // Vista rápida (sin login): permite cancelar la ventana con un clic, sin
+  // confirmación. Editar sigue pidiendo las credenciales de CREDENCIALES en Code.gs.
+  function renderVistaVentana(row) {
+    const box = document.getElementById('modal-box');
+    box.innerHTML = `
+      <h2>${escapeHtml(row.permisionario || '')}</h2>
+      <p><strong>Cliente:</strong> ${escapeHtml(row.cliente || '—')}</p>
+      <p><strong>Finalidad:</strong> ${escapeHtml(row.finalidad || '')}</p>
+      <p><strong>Fecha:</strong> ${escapeHtml(row.fecha || '')}</p>
+      <p><strong>Horario:</strong> ${escapeHtml(row.hora || '')}${row.horaFin ? ' – ' + escapeHtml(row.horaFin) : ''}</p>
+      <p><strong>Solicitada por:</strong> ${escapeHtml(row.solicitanteNombre || '')}</p>
+      <p><strong>Tipo de conexión:</strong> ${escapeHtml(row.tipoConexion || '—')}</p>
+      <p><strong>Estatus:</strong> ${pillFor(row.estatus)}</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="mv-cancelar-ventana">Cancelar ventana</button>
+        <button type="button" class="btn btn-accent" id="mv-editar">Editar</button>
+      </div>
+      <div class="modal-msg" id="mv-msg"></div>
+    `;
+    document.getElementById('modal-overlay').classList.add('show');
+
+    document.getElementById('mv-cancelar-ventana').addEventListener('click', async () => {
+      await enviarCambio({ action: 'eliminar', id: row.id });
+    });
+    document.getElementById('mv-editar').addEventListener('click', async () => {
+      if (sesion) {
+        const datos = await obtenerVentana(row.id, sesion);
+        if (datos) { renderFormEdicion(datos); return; }
+        sesion = null;
       }
-      sesion = null; // la credencial cacheada ya no sirvió, pedir de nuevo
-    }
-    renderFormLogin(id);
+      renderFormLogin(row.id);
+    });
   }
 
   function renderFormLogin(id) {
@@ -719,8 +749,7 @@
     });
 
     document.getElementById('mv-eliminar').addEventListener('click', async () => {
-      if (!confirm('¿Eliminar esta ventana de los 5 calendarios? Esta acción no se puede deshacer.')) return;
-      await enviarCambio({ action: 'eliminar', id: datos.id, ...sesion });
+      await enviarCambio({ action: 'eliminar', id: datos.id });
     });
   }
 
