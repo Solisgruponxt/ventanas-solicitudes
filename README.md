@@ -6,7 +6,9 @@ Página pública para registrar solicitudes de ventana de mantenimiento; cada so
 
 1. Crear un Google Sheet nuevo desde `jsolis@gruponxt.com` llamado "Bitácora Ventanas Mantenimiento".
    - Renombrar la primera pestaña a `Solicitudes`.
-   - Fila 1 (encabezados, 16 columnas): `ID | Timestamp | Permisionario | Finalidad | Fecha | Hora | Duración (h) | Solicitante Nombre | Acceso | Estatus | EventosJSON | Cliente | Solicitante Correo | Solicitante Teléfono | UTC | Tipo de Conexión`.
+   - Fila 1 (encabezados, 17 columnas): `ID | Timestamp | Permisionario | Finalidad | Fecha | Hora Inicio | Duración (h) | Solicitante Nombre | Acceso | Estatus | EventosJSON | Cliente | Solicitante Correo | Solicitante Teléfono | UTC | Tipo de Conexión | Hora Fin`.
+   - "Duración (h)" se calcula automáticamente (Hora Fin − Hora Inicio), el formulario ya no la pide.
+   - La lista de Permisionarios que aparece en el formulario vive en `permisionarios.js` (array `PERMISIONARIOS`, orden alfabético) — para agregar/quitar uno, editar ese archivo y hacer commit+push.
    - Copiar el ID del Sheet (de la URL, entre `/d/` y `/edit`).
 2. En ese Sheet: **Extensiones → Apps Script**. Borrar el contenido default y pegar el de `Code.gs` de esta carpeta.
    - Reemplazar `SHEET_ID` con el ID copiado en el paso 1.
@@ -22,9 +24,9 @@ Página pública para registrar solicitudes de ventana de mantenimiento; cada so
 5. Pedir a las 5 personas destino que compartan su Google Calendar con `jsolis@gruponxt.com`, con permiso **"Hacer cambios en los eventos"** (Configuración de Calendar → "Compartir con determinadas personas").
 6. Hacer commit y push de los cambios en `index.html`/`formulario.html`/`utc-offsets.js` para que GitHub Pages los publique.
 
-## Si ya tenías el Sheet con las 11 columnas anteriores
+## Si ya tenías el Sheet con columnas de una versión anterior
 
-Agrega 4 columnas al final (después de "EventosJSON"): `Cliente | Solicitante Correo | Solicitante Teléfono | UTC | Tipo de Conexión` (son 5, no 4 — revisa el orden exacto arriba). Puedes renombrar "Proyecto" a "Permisionario" y "Solicitada por" a "Solicitante Nombre" para que coincida, aunque el backend no depende del texto del encabezado, solo del orden de las columnas. Sheets recorre automáticamente los datos existentes; las filas viejas simplemente tendrán esas columnas nuevas vacías. Vuelve a pegar el `Code.gs` actualizado en Apps Script y redespliega (Nueva versión).
+Agrega al final las columnas que falten: `Cliente | Solicitante Correo | Solicitante Teléfono | UTC | Tipo de Conexión | Hora Fin`. Puedes renombrar "Proyecto" a "Permisionario" y "Solicitada por" a "Solicitante Nombre" para que coincida, aunque el backend no depende del texto del encabezado, solo del orden de las columnas. Sheets recorre automáticamente los datos existentes; las filas viejas simplemente tendrán esas columnas nuevas vacías. Vuelve a pegar el `Code.gs` actualizado en Apps Script y redespliega (Nueva versión).
 
 ## Prueba
 

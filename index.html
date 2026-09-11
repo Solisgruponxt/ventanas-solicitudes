@@ -366,14 +366,13 @@
             <th>Cliente</th>
             <th>Finalidad</th>
             <th>Fecha</th>
-            <th>Hora</th>
-            <th>Duración</th>
+            <th>Horario</th>
             <th>Solicitada por</th>
             <th>Estatus</th>
           </tr>
         </thead>
         <tbody id="tbody-historial">
-          <tr><td colspan="8" class="loading">Cargando historial…</td></tr>
+          <tr><td colspan="7" class="loading">Cargando historial…</td></tr>
         </tbody>
       </table>
     </div>
@@ -397,6 +396,7 @@
 </div>
 
 <script src="utc-offsets.js"></script>
+<script src="permisionarios.js"></script>
 <script>
   // TODO: pegar aquí la URL /exec del Web App de Apps Script una vez desplegado.
   const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx2tOrhMNiF9TQoTCd0J0rl-H46tjNhZUwo3ZpnJHPF_vNo4xpND1JID3QywqCTvq4Q/exec';
@@ -432,7 +432,7 @@
       historialData = datos;
 
       if (!datos.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty">Aún no hay solicitudes registradas.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">Aún no hay solicitudes registradas.</td></tr>';
       } else {
         tbody.innerHTML = datos.map(row => `
           <tr>
@@ -440,15 +440,14 @@
             <td>${row.cliente || ''}</td>
             <td>${row.finalidad || ''}</td>
             <td>${row.fecha || ''}</td>
-            <td>${row.hora || ''}</td>
-            <td>${row.duracion || ''} h</td>
+            <td>${row.hora || ''}${row.horaFin ? ' – ' + row.horaFin : ''}</td>
             <td>${row.solicitanteNombre || ''}</td>
             <td>${pillFor(row.estatus)}</td>
           </tr>
         `).join('');
       }
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty">No se pudo cargar el historial.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No se pudo cargar el historial.</td></tr>';
     }
     renderCalendario();
   }
@@ -602,25 +601,25 @@
     box.innerHTML = `
       <h2>Editar ventana</h2>
       <label for="mv-permisionario">Permisionario</label>
-      <input type="text" id="mv-permisionario" value="${escapeAttr(datos.permisionario)}">
+      <select id="mv-permisionario"></select>
       <label for="mv-cliente">Cliente</label>
       <input type="text" id="mv-cliente" value="${escapeAttr(datos.cliente)}">
       <label for="mv-finalidad">Finalidad de la ventana</label>
       <input type="text" id="mv-finalidad" value="${escapeAttr(datos.finalidad)}">
+      <label for="mv-fecha">Fecha</label>
+      <input type="date" id="mv-fecha" value="${escapeAttr(datos.fecha)}">
       <div class="modal-row2">
         <div>
-          <label for="mv-fecha">Fecha</label>
-          <input type="date" id="mv-fecha" value="${escapeAttr(datos.fecha)}">
+          <label for="mv-hora">Hora de inicio</label>
+          <input type="time" id="mv-hora" value="${escapeAttr(datos.hora)}">
         </div>
         <div>
-          <label for="mv-hora">Hora</label>
-          <input type="time" id="mv-hora" value="${escapeAttr(datos.hora)}">
+          <label for="mv-horaFin">Hora de término</label>
+          <input type="time" id="mv-horaFin" value="${escapeAttr(datos.horaFin)}">
         </div>
       </div>
       <label for="mv-utc">Zona horaria (UTC)</label>
       <select id="mv-utc"></select>
-      <label for="mv-duracion">Duración (horas)</label>
-      <input type="number" step="0.5" min="0.5" id="mv-duracion" value="${escapeAttr(datos.duracion)}">
       <div class="box">
         <div class="box-titulo">Solicitada por</div>
         <label for="mv-solicitanteNombre">Nombre</label>
@@ -648,6 +647,7 @@
     `;
     document.getElementById('modal-overlay').classList.add('show');
     poblarSelectUTC(document.getElementById('mv-utc'), datos.utc || '-06:00');
+    poblarSelectPermisionario(document.getElementById('mv-permisionario'), datos.permisionario);
 
     // --- Acceso: texto libre o imagen pegada (Ctrl+V), igual que en formulario.html ---
     let mvImagenBase64 = esImagenExistente ? 'existente' : null; // 'existente' = conservar el link ya guardado, sin volver a subir
@@ -702,8 +702,8 @@
         finalidad: document.getElementById('mv-finalidad').value.trim(),
         fecha: document.getElementById('mv-fecha').value,
         hora: document.getElementById('mv-hora').value,
+        horaFin: document.getElementById('mv-horaFin').value,
         utc: document.getElementById('mv-utc').value,
-        duracion: document.getElementById('mv-duracion').value,
         solicitanteNombre: document.getElementById('mv-solicitanteNombre').value.trim(),
         solicitanteCorreo: document.getElementById('mv-solicitanteCorreo').value.trim(),
         solicitanteTelefono: document.getElementById('mv-solicitanteTelefono').value.trim(),

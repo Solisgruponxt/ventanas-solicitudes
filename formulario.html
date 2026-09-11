@@ -175,7 +175,7 @@
     <h1>Registrar ventana de mantenimiento</h1>
     <form id="form-ventana">
       <label for="permisionario">Permisionario</label>
-      <input type="text" id="permisionario" name="permisionario" required placeholder="Ej. Servidor Ingenio">
+      <select id="permisionario" name="permisionario" required></select>
 
       <label for="cliente">Cliente</label>
       <input type="text" id="cliente" name="cliente" required placeholder="Nombre del cliente">
@@ -183,22 +183,22 @@
       <label for="finalidad">Finalidad de la ventana</label>
       <input type="text" id="finalidad" name="finalidad" required placeholder="Ej. Actualización de firmware">
 
+      <label for="fecha">Fecha</label>
+      <input type="date" id="fecha" name="fecha" required>
+
       <div class="row2">
-        <div>
-          <label for="fecha">Fecha</label>
-          <input type="date" id="fecha" name="fecha" required>
-        </div>
         <div>
           <label for="hora">Hora de inicio</label>
           <input type="time" id="hora" name="hora" required>
+        </div>
+        <div>
+          <label for="horaFin">Hora de término</label>
+          <input type="time" id="horaFin" name="horaFin" required>
         </div>
       </div>
 
       <label for="utc">Zona horaria (UTC)</label>
       <select id="utc" name="utc" required></select>
-
-      <label for="duracion">Tiempo de la ventana (horas)</label>
-      <input type="number" id="duracion" name="duracion" step="0.5" min="0.5" required placeholder="Ej. 2">
 
       <div class="box">
         <div class="box-titulo">Solicitada por</div>
@@ -236,11 +236,13 @@
 </div>
 
 <script src="utc-offsets.js"></script>
+<script src="permisionarios.js"></script>
 <script>
   // TODO: pegar aquí la URL /exec del Web App de Apps Script una vez desplegado.
   const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx2tOrhMNiF9TQoTCd0J0rl-H46tjNhZUwo3ZpnJHPF_vNo4xpND1JID3QywqCTvq4Q/exec';
 
   poblarSelectUTC(document.getElementById('utc'), '-06:00');
+  poblarSelectPermisionario(document.getElementById('permisionario'));
 
   const form = document.getElementById('form-ventana');
   const btn = document.getElementById('btn-submit');
@@ -319,8 +321,8 @@
       finalidad: document.getElementById('finalidad').value.trim(),
       fecha: fechaVal,
       hora: horaVal,
+      horaFin: document.getElementById('horaFin').value,
       utc: utcVal,
-      duracion: document.getElementById('duracion').value,
       solicitanteNombre: document.getElementById('solicitanteNombre').value.trim(),
       solicitanteCorreo: document.getElementById('solicitanteCorreo').value.trim(),
       solicitanteTelefono: document.getElementById('solicitanteTelefono').value.trim(),
