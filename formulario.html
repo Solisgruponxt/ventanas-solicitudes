@@ -166,6 +166,19 @@
   .msg.warn { background: rgba(217,119,6,0.12); color: var(--warn); }
   .msg.bad { background: rgba(220,38,38,0.12); color: var(--bad); }
   .hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+  .admin-toggle {
+    display: block;
+    margin-top: 22px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .admin-toggle:hover, .admin-toggle:focus-visible { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -229,6 +242,13 @@
         <button type="button" class="acceso-preview-quitar" id="acceso-preview-quitar">Quitar imagen</button>
       </div>
       <div class="hint" id="acceso-hint">Esta información solo la verán las personas del calendario, no aparece en el historial público. Puedes escribir texto o pegar (Ctrl+V) una imagen.</div>
+
+      <button type="button" class="admin-toggle" id="admin-toggle" aria-expanded="false" aria-controls="admin-box">Acceso de administrador</button>
+      <div class="box" id="admin-box" hidden>
+        <label for="claveAdmin">Clave de administrador</label>
+        <input type="password" id="claveAdmin" name="claveAdmin" autocomplete="current-password">
+        <div class="hint">Con la clave correcta se puede registrar con menos de 24 horas de anticipación.</div>
+      </div>
 
       <button type="submit" class="btn-submit" id="btn-submit">Registrar</button>
 
@@ -321,6 +341,18 @@
 
   document.getElementById('acceso-preview-quitar').addEventListener('click', quitarImagenAcceso);
 
+  // --- Acceso de administrador: permite registrar con menos de 24 h ---
+  const adminToggle = document.getElementById('admin-toggle');
+  const adminBox = document.getElementById('admin-box');
+  const claveAdminInput = document.getElementById('claveAdmin');
+
+  adminToggle.addEventListener('click', () => {
+    adminBox.hidden = !adminBox.hidden;
+    adminToggle.setAttribute('aria-expanded', String(!adminBox.hidden));
+    if (adminBox.hidden) claveAdminInput.value = '';
+    else claveAdminInput.focus();
+  });
+
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
 
@@ -329,7 +361,8 @@
     const horaFinVal = document.getElementById('horaFin').value;
     const utcVal = document.getElementById('utc').value;
 
-    const hoyStr = new Date().toISOString().slice(0, 10);
+    // Fecha local (no UTC): con toISOString, después de las 18:00 en México ya sería "mañana".
+    const hoyStr = new Date().toLocaleDateString('en-CA');
     if (!fechaVal || fechaVal < hoyStr) {
       mostrarMensaje('La fecha no puede ser anterior a hoy.', 'bad');
       return;
@@ -342,7 +375,14 @@
     const inicio = new Date(fechaVal + 'T' + horaVal + ':00' + utcVal);
     const horasAnticipacion = (inicio.getTime() - Date.now()) / (1000 * 60 * 60);
 
-    if (isNaN(inicio.getTime()) || horasAnticipacion < 24) {
+    // Con clave de administrador solo se exige que la ventana no haya empezado;
+    // el servidor es quien valida que la clave sea correcta.
+    const claveAdmin = claveAdminInput.value;
+    if (isNaN(inicio.getTime()) || horasAnticipacion <= 0) {
+      mostrarMensaje('La hora de inicio ya pasó; elige una hora futura.', 'bad');
+      return;
+    }
+    if (!claveAdmin && horasAnticipacion < 24) {
       mostrarMensaje('La ventana debe registrarse con al menos 24 horas de anticipación.', 'bad');
       return;
     }
@@ -377,7 +417,8 @@
       tipoConexion: document.getElementById('tipoConexion').value,
       acceso: accesoImagenBase64 ? '' : accesoTextarea.value.trim(),
       accesoImagenBase64: accesoImagenBase64 || undefined,
-      accesoImagenMime: accesoImagenMime || undefined
+      accesoImagenMime: accesoImagenMime || undefined,
+      claveAdmin: claveAdmin || undefined
     };
 
     try {
