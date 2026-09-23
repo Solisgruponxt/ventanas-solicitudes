@@ -217,6 +217,7 @@
         <option value="TeamViewer">TeamViewer</option>
         <option value="AnyDesk">AnyDesk</option>
         <option value="Meet">Meet</option>
+        <option value="Teams">Teams</option>
         <option value="Remote Desktop">Remote Desktop</option>
         <option value="Otro">Otro</option>
       </select>
@@ -227,7 +228,7 @@
         <img id="acceso-preview-img" alt="Vista previa del acceso">
         <button type="button" class="acceso-preview-quitar" id="acceso-preview-quitar">Quitar imagen</button>
       </div>
-      <div class="hint">Esta información solo la verán las personas del calendario, no aparece en el historial público. Puedes escribir texto o pegar (Ctrl+V) una imagen.</div>
+      <div class="hint" id="acceso-hint">Esta información solo la verán las personas del calendario, no aparece en el historial público. Puedes escribir texto o pegar (Ctrl+V) una imagen.</div>
 
       <button type="submit" class="btn-submit" id="btn-submit">Registrar</button>
 
@@ -259,9 +260,31 @@
   let accesoImagenMime = null;
 
   const accesoTextarea = document.getElementById('acceso');
-  const accesoPlaceholderOriginal = accesoTextarea.placeholder;
   const accesoPreview = document.getElementById('acceso-preview');
   const accesoPreviewImg = document.getElementById('acceso-preview-img');
+  const accesoHint = document.getElementById('acceso-hint');
+  const tipoConexionSelect = document.getElementById('tipoConexion');
+
+  const ACCESO_PLACEHOLDER_GENERAL = accesoTextarea.placeholder;
+  const ACCESO_PLACEHOLDER_TEAMS = 'Pega la liga de la reunión de Teams (https://teams.microsoft.com/...), o una imagen (Ctrl+V)';
+  const ACCESO_HINT_GENERAL = accesoHint.textContent;
+  const ACCESO_HINT_TEAMS = 'Obligatorio para Teams: pega la liga de la reunión o una imagen con los datos de acceso. Solo la verán las personas del calendario.';
+
+  // Mismo patrón que Code.gs (LIGA_TEAMS_RE): Teams empresarial y personal. Se busca
+  // dentro del texto para aceptar la invitación completa (liga + ID + código).
+  const LIGA_TEAMS_RE = /https:\/\/teams\.(microsoft|live)\.com\/\S+/i;
+
+  function esTeams() {
+    return tipoConexionSelect.value === 'Teams';
+  }
+
+  function actualizarCampoAcceso() {
+    if (accesoImagenBase64) return; // mientras haya imagen se conserva su placeholder
+    accesoTextarea.placeholder = esTeams() ? ACCESO_PLACEHOLDER_TEAMS : ACCESO_PLACEHOLDER_GENERAL;
+    accesoHint.textContent = esTeams() ? ACCESO_HINT_TEAMS : ACCESO_HINT_GENERAL;
+  }
+
+  tipoConexionSelect.addEventListener('change', actualizarCampoAcceso);
 
   function quitarImagenAcceso() {
     accesoImagenBase64 = null;
@@ -269,7 +292,7 @@
     accesoPreview.hidden = true;
     accesoPreviewImg.src = '';
     accesoTextarea.disabled = false;
-    accesoTextarea.placeholder = accesoPlaceholderOriginal;
+    actualizarCampoAcceso();
   }
 
   accesoTextarea.addEventListener('paste', (ev) => {
@@ -322,6 +345,18 @@
     if (isNaN(inicio.getTime()) || horasAnticipacion < 24) {
       mostrarMensaje('La ventana debe registrarse con al menos 24 horas de anticipación.', 'bad');
       return;
+    }
+
+    if (esTeams() && !accesoImagenBase64) {
+      const accesoVal = accesoTextarea.value.trim();
+      if (!accesoVal) {
+        mostrarMensaje('Para conexión por Teams debes pegar la liga de la reunión o una imagen con el acceso.', 'bad');
+        return;
+      }
+      if (!LIGA_TEAMS_RE.test(accesoVal)) {
+        mostrarMensaje('No encontramos una liga de Teams válida (https://teams.microsoft.com/... o https://teams.live.com/...).', 'bad');
+        return;
+      }
     }
 
     btn.disabled = true;
