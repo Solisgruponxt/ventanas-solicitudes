@@ -8,7 +8,7 @@ Página pública para registrar solicitudes de ventana de mantenimiento; cada so
    - Renombrar la primera pestaña a `Solicitudes`.
    - Fila 1 (encabezados, 17 columnas): `ID | Timestamp | Permisionario | Finalidad | Fecha | Hora Inicio | Duración (h) | Solicitante Nombre | Acceso | Estatus | EventosJSON | Cliente | Solicitante Correo | Solicitante Teléfono | UTC | Tipo de Conexión | Hora Fin`.
    - "Duración (h)" se calcula automáticamente (Hora Fin − Hora Inicio), el formulario ya no la pide.
-   - La lista de Permisionarios que aparece en el formulario vive en `permisionarios.js` (array `PERMISIONARIOS`, orden alfabético) — para agregar/quitar uno, editar ese archivo y hacer commit+push.
+   - La lista base de Permisionarios vive en `permisionarios.js` (array `PERMISIONARIOS`). Para agregar uno sin tocar código: en el formulario, "+ Agregar permisionario" + clave de administrador. Se guarda en la pestaña `Permisionarios` del Sheet (se crea sola) y se combina con la lista base para todos. Para quitar uno agregado así, borra su fila en esa pestaña.
    - Copiar el ID del Sheet (de la URL, entre `/d/` y `/edit`).
 2. En ese Sheet: **Extensiones → Apps Script**. Borrar el contenido default y pegar el de `Code.gs` de esta carpeta.
    - Reemplazar `SHEET_ID` con el ID copiado en el paso 1.

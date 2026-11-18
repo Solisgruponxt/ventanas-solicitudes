@@ -179,6 +179,21 @@
     cursor: pointer;
   }
   .admin-toggle:hover, .admin-toggle:focus-visible { color: var(--accent); }
+  .admin-toggle.link-inline { margin-top: 8px; }
+  .btn-secundario {
+    margin-top: 14px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn-secundario:hover { background: rgba(var(--accent-rgb), 0.08); }
+  .btn-secundario:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -189,6 +204,17 @@
     <form id="form-ventana">
       <label for="permisionario">Permisionario</label>
       <select id="permisionario" name="permisionario" required></select>
+      <button type="button" class="admin-toggle link-inline" id="agregar-perm-toggle" aria-expanded="false" aria-controls="agregar-perm-box">+ Agregar permisionario</button>
+      <div class="box" id="agregar-perm-box" hidden>
+        <div class="box-titulo">Nuevo permisionario</div>
+        <label for="nuevoPermisionario">Nombre</label>
+        <input type="text" id="nuevoPermisionario" maxlength="80" placeholder="Ej. Enel Green Power">
+        <label for="clavePermisionario">Clave de administrador</label>
+        <input type="password" id="clavePermisionario" autocomplete="current-password">
+        <button type="button" class="btn-secundario" id="btn-guardar-perm">Guardar permisionario</button>
+        <div class="msg" id="msg-perm"></div>
+        <div class="hint">Queda guardado y aparecerá en la lista para todos.</div>
+      </div>
 
       <label for="cliente">Cliente</label>
       <input type="text" id="cliente" name="cliente" placeholder="Nombre del cliente">
@@ -264,7 +290,9 @@
   const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx2tOrhMNiF9TQoTCd0J0rl-H46tjNhZUwo3ZpnJHPF_vNo4xpND1JID3QywqCTvq4Q/exec';
 
   poblarSelectUTC(document.getElementById('utc'), '-06:00');
-  poblarSelectPermisionario(document.getElementById('permisionario'));
+  const permisionarioSelect = document.getElementById('permisionario');
+  poblarSelectPermisionario(permisionarioSelect);
+  cargarPermisionariosGuardados(WEB_APP_URL, permisionarioSelect);
 
   const form = document.getElementById('form-ventana');
   const btn = document.getElementById('btn-submit');
@@ -274,6 +302,77 @@
     msg.textContent = texto;
     msg.className = 'msg show ' + tipo;
   }
+
+  // --- Agregar permisionario manualmente (se guarda en el Sheet) ---
+  const agregarPermToggle = document.getElementById('agregar-perm-toggle');
+  const agregarPermBox = document.getElementById('agregar-perm-box');
+  const nuevoPermInput = document.getElementById('nuevoPermisionario');
+  const clavePermInput = document.getElementById('clavePermisionario');
+  const btnGuardarPerm = document.getElementById('btn-guardar-perm');
+  const msgPerm = document.getElementById('msg-perm');
+
+  function mensajePerm(texto, tipo) {
+    msgPerm.textContent = texto;
+    msgPerm.className = 'msg show ' + tipo;
+  }
+
+  agregarPermToggle.addEventListener('click', () => {
+    agregarPermBox.hidden = !agregarPermBox.hidden;
+    agregarPermToggle.setAttribute('aria-expanded', String(!agregarPermBox.hidden));
+    msgPerm.className = 'msg';
+    if (!agregarPermBox.hidden) {
+      const claveAdminVal = document.getElementById('claveAdmin').value;
+      if (claveAdminVal && !clavePermInput.value) clavePermInput.value = claveAdminVal;
+      nuevoPermInput.focus();
+    }
+  });
+
+  nuevoPermInput.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); btnGuardarPerm.click(); }
+  });
+  clavePermInput.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); btnGuardarPerm.click(); }
+  });
+
+  btnGuardarPerm.addEventListener('click', async () => {
+    const nombre = nuevoPermInput.value.replace(/\s+/g, ' ').trim();
+    const clave = clavePermInput.value;
+    if (nombre.length < 2) { mensajePerm('Escribe el nombre del permisionario.', 'bad'); return; }
+    if (!clave) { mensajePerm('Escribe la clave de administrador.', 'bad'); return; }
+
+    const existente = permisionariosActuales.find(p => p.toLowerCase() === nombre.toLowerCase());
+    if (existente) {
+      poblarSelectPermisionario(permisionarioSelect, existente);
+      mensajePerm('"' + existente + '" ya estaba en la lista; quedó seleccionado.', 'warn');
+      return;
+    }
+
+    btnGuardarPerm.disabled = true;
+    btnGuardarPerm.textContent = 'Guardando…';
+    msgPerm.className = 'msg';
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'agregarPermisionario', nombre: nombre, claveAdmin: clave })
+      });
+      const data = await res.json();
+      if (data.error) {
+        mensajePerm('Error: ' + data.error, 'bad');
+      } else {
+        combinarPermisionarios(data.permisionarios);
+        const guardado = permisionariosActuales.find(p => p.toLowerCase() === nombre.toLowerCase()) || data.nombre;
+        poblarSelectPermisionario(permisionarioSelect, guardado);
+        nuevoPermInput.value = '';
+        mensajePerm('"' + guardado + '" guardado y seleccionado.', 'ok');
+      }
+    } catch (err) {
+      mensajePerm('No se pudo conectar con el servidor. Intenta de nuevo.', 'bad');
+    } finally {
+      btnGuardarPerm.disabled = false;
+      btnGuardarPerm.textContent = 'Guardar permisionario';
+    }
+  });
 
   // --- Acceso: texto libre o imagen pegada (Ctrl+V) ---
   let accesoImagenBase64 = null;
